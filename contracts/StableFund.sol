@@ -7,67 +7,67 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract StableFund {
     using SafeERC20 for IERC20;
 
-    // Immutable admin address (set once at deployment)
+    // Admin address, set once at deployment
     address public immutable admin;
 
-    // ERC20 stable token used for deposits and withdrawals
-    IERC20 public stableToken;
+    // Stable ERC20 token used in the fund
+    IERC20 public immutable stableToken;
 
-    // Tracks total token deposits in the contract
+    // Total tokens deposited in the contract
     uint256 public totalDeposits;
 
-    // Maps user addresses to their deposit balances
+    // Mapping to track individual user balances
     mapping(address => uint256) public balances;
 
-    // Events for logging key contract operations
+    // Events
     event Deposited(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event Rebalanced(uint256 newTotalDeposits);
 
-    // Modifier to restrict function access to the admin
+    // Modifier to restrict function to admin only
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Access denied: Only admin");
+        require(msg.sender == admin, "Only admin can call this");
         _;
     }
 
-    /// @notice Constructor to initialize the stable token and admin
-    /// @param _tokenAddress Address of the ERC20 token to be used
-    constructor(address _tokenAddress) {
-        require(_tokenAddress != address(0), "Invalid token address");
+    /// @notice Contract constructor
+    /// @param token Address of the ERC20 stable token
+    constructor(address token) {
+        require(token != address(0), "Token address cannot be zero");
         admin = msg.sender;
-        stableToken = IERC20(_tokenAddress);
+        stableToken = IERC20(token);
     }
 
-    /// @notice Allows users to deposit tokens into the fund
-    /// @param _amount Amount of tokens to deposit
-    function deposit(uint256 _amount) external {
-        require(_amount > 0, "Deposit amount must be greater than zero");
+    /// @notice Deposit tokens into the fund
+    /// @param amount Amount to deposit
+    function deposit(uint256 amount) external {
+        require(amount > 0, "Amount must be > 0");
 
-        stableToken.safeTransferFrom(msg.sender, address(this), _amount);
+        stableToken.safeTransferFrom(msg.sender, address(this), amount);
 
-        balances[msg.sender] += _amount;
-        totalDeposits += _amount;
+        balances[msg.sender] += amount;
+        totalDeposits += amount;
 
-        emit Deposited(msg.sender, _amount);
+        emit Deposited(msg.sender, amount);
     }
 
-    /// @notice Allows users to withdraw their tokens from the fund
-    /// @param _amount Amount of tokens to withdraw
-    function withdraw(uint256 _amount) external {
-        require(_amount > 0, "Withdraw amount must be greater than zero");
-        require(balances[msg.sender] >= _amount, "Insufficient balance");
+    /// @notice Withdraw tokens from the fund
+    /// @param amount Amount to withdraw
+    function withdraw(uint256 amount) external {
+        require(amount > 0, "Amount must be > 0");
+        require(balances[msg.sender] >= amount, "Not enough balance");
 
-        balances[msg.sender] -= _amount;
-        totalDeposits -= _amount;
+        balances[msg.sender] -= amount;
+        totalDeposits -= amount;
 
-        stableToken.safeTransfer(msg.sender, _amount);
+        stableToken.safeTransfer(msg.sender, amount);
 
-        emit Withdrawn(msg.sender, _amount);
+        emit Withdrawn(msg.sender, amount);
     }
 
-    /// @notice Admin function to initiate rebalancing (logic TBD)
+    /// @notice Admin-only function to trigger rebalancing logic
     function rebalance() external onlyAdmin {
-        // Rebalancing strategy will be implemented here
+        // Future implementation
         emit Rebalanced(totalDeposits);
     }
 }
