@@ -7,41 +7,41 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract StableFund {
     using SafeERC20 for IERC20;
 
-    /// @notice Admin address (immutable)
+    /// @notice Address of the admin (immutable after deployment)
     address public immutable admin;
 
-    /// @notice Stable ERC20 token used for deposits
+    /// @notice ERC20 stablecoin accepted for deposits
     IERC20 public immutable stableToken;
 
-    /// @notice Total tokens deposited in the contract
+    /// @notice Total amount of tokens deposited in the contract
     uint256 public totalDeposits;
 
-    /// @notice User address to balance mapping
+    /// @notice Mapping of user addresses to their token balances
     mapping(address => uint256) public balances;
 
-    /// @notice Emitted when a user deposits tokens
+    /// @notice Event emitted when a user makes a deposit
     event Deposited(address indexed user, uint256 amount);
 
-    /// @notice Emitted when a user withdraws tokens
+    /// @notice Event emitted when a user makes a withdrawal
     event Withdrawn(address indexed user, uint256 amount);
 
-    /// @notice Emitted when admin triggers rebalancing
+    /// @notice Event emitted when rebalancing is triggered
     event Rebalanced(uint256 newTotalDeposits);
 
-    /// @notice Restrict function to admin only
+    /// @dev Restricts function to be called by admin only
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Access denied: caller is not admin");
+        require(msg.sender == admin, "Access denied: Only admin");
         _;
     }
 
-    /// @param _token Address of the ERC20 token to be used
+    /// @param _token Address of the ERC20 stable token
     constructor(address _token) {
         require(_token != address(0), "Invalid token address");
         admin = msg.sender;
         stableToken = IERC20(_token);
     }
 
-    /// @notice Deposit tokens into the fund
+    /// @notice Deposits `_amount` of tokens into the fund
     /// @param _amount Amount of tokens to deposit
     function deposit(uint256 _amount) external {
         require(_amount > 0, "Deposit must be greater than 0");
@@ -54,7 +54,7 @@ contract StableFund {
         emit Deposited(msg.sender, _amount);
     }
 
-    /// @notice Withdraw tokens from the fund
+    /// @notice Withdraws `_amount` of tokens from the fund
     /// @param _amount Amount of tokens to withdraw
     function withdraw(uint256 _amount) external {
         require(_amount > 0, "Withdraw must be greater than 0");
@@ -68,9 +68,9 @@ contract StableFund {
         emit Withdrawn(msg.sender, _amount);
     }
 
-    /// @notice Admin function to initiate rebalancing (to be implemented)
+    /// @notice Triggers rebalancing (admin-only; logic to be implemented)
     function rebalance() external onlyAdmin {
-        // Rebalancing logic placeholder
+        // Placeholder for future rebalancing logic
         emit Rebalanced(totalDeposits);
     }
 }
