@@ -4,49 +4,50 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-/// @title StableFund - A minimal ERC20-based deposit and withdrawal fund
+/// @title StableFund - ERC20-based deposit and withdrawal fund
+/// @notice Allows users to deposit and withdraw a specific ERC20 stable token
+/// @dev Admin can later implement rebalancing logic
 contract StableFund {
     using SafeERC20 for IERC20;
 
-    /// @notice Admin address (immutable after deployment)
+    /// @notice Address of the admin (set once at deployment)
     address public immutable admin;
 
-    /// @notice ERC20 stable token accepted by the fund
+    /// @notice ERC20 stable token accepted for deposits and withdrawals
     IERC20 public immutable stableToken;
 
-    /// @notice Total amount of tokens deposited
+    /// @notice Total amount of tokens currently deposited
     uint256 public totalDeposits;
 
-    /// @notice Mapping of user address to their deposit balance
+    /// @notice Mapping from user address to deposited token balance
     mapping(address => uint256) public balances;
 
-    /// @notice Emitted when a user deposits tokens
+    /// @notice Event emitted when tokens are deposited
     event Deposited(address indexed user, uint256 amount);
 
-    /// @notice Emitted when a user withdraws tokens
+    /// @notice Event emitted when tokens are withdrawn
     event Withdrawn(address indexed user, uint256 amount);
 
-    /// @notice Emitted when the admin triggers rebalancing
-    event Rebalanced(uint256 updatedTotalDeposits);
+    /// @notice Event emitted when rebalancing is triggered
+    event Rebalanced(uint256 total);
 
-    /// @dev Ensures only the admin can call the function
+    /// @dev Modifier to restrict certain functions to the admin only
     modifier onlyAdmin() {
         require(msg.sender == admin, "StableFund: caller is not admin");
         _;
     }
 
-    /// @notice Initializes the contract with the stable token address and sets admin
     /// @param token Address of the ERC20 stable token
     constructor(address token) {
-        require(token != address(0), "StableFund: token address cannot be zero");
+        require(token != address(0), "StableFund: invalid token address");
         admin = msg.sender;
         stableToken = IERC20(token);
     }
 
-    /// @notice Allows a user to deposit tokens into the fund
-    /// @param amount Amount of tokens to deposit
+    /// @notice Deposit tokens into the contract
+    /// @param amount Number of tokens to deposit
     function deposit(uint256 amount) external {
-        require(amount > 0, "StableFund: deposit must be greater than 0");
+        require(amount > 0, "StableFund: amount must be > 0");
 
         stableToken.safeTransferFrom(msg.sender, address(this), amount);
 
@@ -56,10 +57,10 @@ contract StableFund {
         emit Deposited(msg.sender, amount);
     }
 
-    /// @notice Allows a user to withdraw their deposited tokens
-    /// @param amount Amount of tokens to withdraw
+    /// @notice Withdraw tokens previously deposited
+    /// @param amount Number of tokens to withdraw
     function withdraw(uint256 amount) external {
-        require(amount > 0, "StableFund: withdrawal must be greater than 0");
+        require(amount > 0, "StableFund: amount must be > 0");
         require(balances[msg.sender] >= amount, "StableFund: insufficient balance");
 
         balances[msg.sender] -= amount;
@@ -70,7 +71,7 @@ contract StableFund {
         emit Withdrawn(msg.sender, amount);
     }
 
-    /// @notice Admin-only function to trigger rebalancing (no logic yet)
+    /// @notice Admin-only placeholder function to trigger rebalancing logic
     function rebalance() external onlyAdmin {
         emit Rebalanced(totalDeposits);
     }
