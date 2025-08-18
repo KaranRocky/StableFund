@@ -4,68 +4,79 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-/// @title StableBank - A vault for deposits and withdrawals of a stable ERC20 token
-/// @notice Users can deposit and withdraw the chosen stablecoin
-/// @dev The owner may extend this with rebalancing or yield strategies
-contract StableBank {
+/// @title StableVault - A vault for ERC20 stablecoin deposits and withdrawals
+/// @notice Users can deposit and withdraw tokens, owner can trigger rebalancing
+/// @dev Logic can be extended later to include strategies
+contract StableVault {
     using SafeERC20 for IERC20;
 
-    /// @notice The account designated as contract owner
+    /// @notice Address of the contract owner (set at deployment)
     address public immutable owner;
 
-    /// @notice The ERC20 stablecoin accepted by this contract
-    IERC20 public immutable stable;
+    /// @notice ERC20 stablecoin accepted by this vault
+    IERC20 public immutable stableToken;
 
-    /// @notice Total tokens currently managed by the vault
-    uint256 public totalBalance;
+    /// @notice Total stablecoins held in the vault
+    uint256 public totalDeposits;
 
-    /// @notice Mapping of user → amount of stable tokens deposited
+    /// @notice Mapping from user → deposited balance
     mapping(address => uint256) public balances;
 
-    /// @notice Emitted when a deposit occurs
+    /// @notice Event emitted when a user deposits
     event Deposited(address indexed user, uint256 amount);
 
-    /// @notice Emitted when a withdrawal occurs
+    /// @notice Event emitted when a user withdraws
     event Withdrawn(address indexed user, uint256 amount);
 
-    /// @notice Emitted when rebalancing is triggered
-    event Rebalanced(uint256 newTotal);
+    /// @notice Event emitted when rebalancing is triggered
+    event Rebalanced(uint256 total);
 
-    /// @dev Restricts function access to only the owner
+    /// @dev Restrict function calls to only the owner
     modifier onlyOwner() {
-        require(msg.sender == owner, "StableBank: caller is not owner");
+        require(msg.sender == owner, "StableVault: caller is not owner");
         _;
     }
 
-    /// @param token Address of the ERC20 stablecoin to use
+    /// @param token Address of the ERC20 stablecoin
     constructor(address token) {
-        require(token != address(0), "StableBank: invalid token");
+        require(token != address(0), "StableVault: invalid token address");
         owner = msg.sender;
-        stable = IERC20(token);
+        stableToken = IERC20(token);
     }
 
     /// @notice Deposit stablecoins into the vault
-    /// @param amount Amount of tokens to deposit
+    /// @param amount Number of tokens to deposit
     function deposit(uint256 amount) external {
-        require(amount > 0, "StableBank: deposit amount must be > 0");
+        require(amount > 0, "StableVault: amount must be > 0");
 
-        stable.safeTransferFrom(msg.sender, address(this), amount);
+        stableToken.safeTransferFrom(msg.sender, address(this), amount);
 
         balances[msg.sender] += amount;
-        totalBalance += amount;
+        totalDeposits += amount;
 
         emit Deposited(msg.sender, amount);
     }
 
     /// @notice Withdraw your deposited stablecoins
-    /// @param amount Amount of tokens to withdraw
+    /// @param amount Number of tokens to withdraw
     function withdraw(uint256 amount) external {
-        require(amount > 0, "StableBank: withdraw amount must be > 0");
-        uint256 userBal = balances[msg.sender];
-        require(userBal >= amount, "StableBank: insufficient balance");
+        require(amount > 0, "StableVault: amount must be > 0");
+        uint256 bal = balances[msg.sender];
+        require(bal >= amount, "StableVault: insufficient balance");
 
-        balances[msg.sender] = userBal - amount;
-        totalBalance -= amount;
+        balances[msg.sender] = bal - amount;
+        totalDeposits -= amount;
+
+        stableToken.safeTransfer(msg.sender, amount);
+
+        emit Withdrawn(msg.sender, amount);
+    }
+
+    /// @notice Trigger rebalancing (owner only)
+    function rebalance() external onlyOwner {
+        emit Rebalanced(totalDeposits);
+    }
+}        totalBalance -= amount;
 
         stable.safeTransfer(msg.sender, amount);
 
