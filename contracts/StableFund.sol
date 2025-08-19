@@ -76,37 +76,4 @@ contract StableVault {
     function rebalance() external onlyOwner {
         emit Rebalanced(totalDeposits);
     }
-}        totalBalance -= amount;
-
-        stable.safeTransfer(msg.sender, amount);
-
-        emit Withdrawn(msg.sender, amount);
-    }
-
-    /// @notice Owner-only function to initiate rebalancing
-    function rebalance() external onlyOwner {
-        emit Rebalanced(totalBalance);
-    }
-}        totalHoldings -= amount;
-
-        stablecoin.safeTransfer(msg.sender, amount);
-
-        emit TokensWithdrawn(msg.sender, amount);
-    }
-
-    /// @notice Triggers a rebalancing operation (owner only)
-    function rebalanceVault() external onlyVaultOwner {
-        emit VaultRebalanced(totalHoldings);
-    }
-}        totalFunds -= amount;
-
-        token.safeTransfer(msg.sender, amount);
-
-        emit Withdrawal(msg.sender, amount);
-    }
-
-    /// @notice Placeholder function for admin-only rebalancing
-    function triggerRebalance() external onlyOwner {
-        emit RebalanceTriggered(totalFunds);
-    }
 }
