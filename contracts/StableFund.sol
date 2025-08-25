@@ -4,68 +4,79 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-/// @title StableVault - Manages ERC20 stablecoin deposits and withdrawals
-/// @notice Users can deposit/withdraw tokens, and the contract owner can rebalance
-/// @dev Extendable later with strategies or yield logic
-contract StableVault {
+/// @title ReserveVault - Handles deposits and withdrawals of ERC20 stablecoins
+/// @notice Users can add/remove funds, while the contract manager can rebalance
+/// @dev Future updates may include strategies for yield optimization
+contract ReserveVault {
     using SafeERC20 for IERC20;
 
-    /// @notice Owner of the vault (set once at deployment)
-    address public immutable vaultAdmin;
+    /// @notice Manager (owner) of the vault set during deployment
+    address public immutable manager;
 
-    /// @notice ERC20 stablecoin supported by the vault
-    IERC20 public immutable token;
+    /// @notice ERC20 stablecoin accepted by the vault
+    IERC20 public immutable reserveToken;
 
-    /// @notice Total funds deposited in the vault
-    uint256 public totalFunds;
+    /// @notice Tracks overall deposits in the vault
+    uint256 public vaultBalance;
 
-    /// @notice Tracks each user’s deposits
-    mapping(address => uint256) public userDeposits;
+    /// @notice Mapping of user → deposited amount
+    mapping(address => uint256) public holdings;
 
-    /// @notice Emitted when a user makes a deposit
-    event Funded(address indexed account, uint256 amount);
+    /// @notice Event emitted on deposit
+    event Deposit(address indexed depositor, uint256 value);
 
-    /// @notice Emitted when a user withdraws
-    event Redeemed(address indexed account, uint256 amount);
+    /// @notice Event emitted on withdrawal
+    event Withdrawal(address indexed withdrawer, uint256 value);
 
-    /// @notice Emitted when the vault is rebalanced
-    event Rebalance(uint256 newTotal);
+    /// @notice Event emitted when vault is rebalanced
+    event VaultRebalanced(uint256 currentBalance);
 
-    /// @dev Ensures only admin can call restricted functions
-    modifier onlyAdmin() {
-        require(msg.sender == vaultAdmin, "StableVault: not admin");
+    /// @dev Restricts access to manager-only functions
+    modifier onlyManager() {
+        require(msg.sender == manager, "ReserveVault: caller not manager");
         _;
     }
 
-    /// @param stableToken Address of the ERC20 token used
-    constructor(address stableToken) {
-        require(stableToken != address(0), "StableVault: zero token address");
-        vaultAdmin = msg.sender;
-        token = IERC20(stableToken);
+    /// @param token Address of the ERC20 stablecoin used in the vault
+    constructor(address token) {
+        require(token != address(0), "ReserveVault: invalid token address");
+        manager = msg.sender;
+        reserveToken = IERC20(token);
     }
 
-    /// @notice Deposit tokens into the vault
-    /// @param amount Amount of tokens to deposit
-    function fund(uint256 amount) external {
-        require(amount > 0, "StableVault: amount must be positive");
+    /// @notice Deposit stablecoins into the vault
+    /// @param amount Number of tokens to deposit
+    function addFunds(uint256 amount) external {
+        require(amount > 0, "ReserveVault: deposit must be > 0");
 
-        token.safeTransferFrom(msg.sender, address(this), amount);
+        reserveToken.safeTransferFrom(msg.sender, address(this), amount);
 
-        userDeposits[msg.sender] += amount;
-        totalFunds += amount;
+        holdings[msg.sender] += amount;
+        vaultBalance += amount;
 
-        emit Funded(msg.sender, amount);
+        emit Deposit(msg.sender, amount);
     }
 
-    /// @notice Withdraw your deposited tokens
-    /// @param amount Amount of tokens to withdraw
-    function redeem(uint256 amount) external {
-        require(amount > 0, "StableVault: amount must be positive");
-        uint256 deposited = userDeposits[msg.sender];
-        require(deposited >= amount, "StableVault: insufficient funds");
+    /// @notice Withdraw previously deposited stablecoins
+    /// @param amount Number of tokens to withdraw
+    function removeFunds(uint256 amount) external {
+        require(amount > 0, "ReserveVault: withdrawal must be > 0");
+        uint256 userBalance = holdings[msg.sender];
+        require(userBalance >= amount, "ReserveVault: insufficient balance");
 
-        userDeposits[msg.sender] = deposited - amount;
-        totalFunds -= amount;
+        holdings[msg.sender] = userBalance - amount;
+        vaultBalance -= amount;
+
+        reserveToken.safeTransfer(msg.sender, amount);
+
+        emit Withdrawal(msg.sender, amount);
+    }
+
+    /// @notice Manager-only rebalance trigger
+    function rebalanceVault() external onlyManager {
+        emit VaultRebalanced(vaultBalance);
+    }
+}        totalFunds -= amount;
 
         token.safeTransfer(msg.sender, amount);
 
