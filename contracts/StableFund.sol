@@ -4,7 +4,6 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-
 /// @title ReserveVault - Stores ERC20 tokens with deposit/withdraw functionality
 /// @notice Users can add/remove funds, while the manager can initiate rebalancing
 /// @dev Designed to be extended later for yield strategies
